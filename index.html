@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="mining, calculator, blockchain, GPU, ASIC">
+    <meta name="author" content="Antoine FERRON, BLKHUB">
+    <title>Crypto Mining Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl"
+          crossorigin="anonymous"
+    >
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/tooltipster@4.2.8/dist/css/tooltipster.bundle.min.css"
+          integrity="sha256-Qc4lCfqZWYaHF5hgEOFrYzSIX9Rrxk0NPHRac+08QeQ="
+          crossorigin="anonymous"
+    >
+    <link href="css/theme.css" rel="stylesheet">
+  </head>
+  <body class="d-flex h-100 text-center text-white bg-dark">
+  <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+  <header class="mb-2 mb-sm-5">
+    <div>
+      <h3 class="float-md-start mb-0">Crypto Mining Calculator</h3>
+      <nav class="nav nav-masthead justify-content-center float-md-end">
+        <a class="nav-link active" aria-current="page" href="#">Home</a>
+        <a class="nav-link" href="about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="px-3 mt-sm-5">
+    <div class="row">
+      <div class="form-group col-sm-4">
+        <label for="usr" class="m-1 mt-2">
+          Crypto mined ticker
+          <img src="assets/imgs/info.svg"
+               class="tooltipst"
+               title="Any crypto coin ticker that is mined with PoS"
+          >
+        </label>
+        <input type="text" id="coinInput" class="form-control" value="ETH">
+      </div>
+      <div class="form-group col-sm-4">
+        <label for="usr" class="m-1 mt-2">
+          Currency symbol
+          <img src="assets/imgs/info.svg"
+               class="tooltipst"
+               title="Fiat currency ISO4217 symbol or crypto coin ticker"
+          >
+        </label>
+        <input type="text" id="fiatInput" class="form-control" value="USD">
+      </div>
+      <div class="form-group col-sm-4">
+        <label for="usr" class="m-1 mt-2">Hashrate speed</label>
+        <div class="input-group">
+          <input type="text" id="hashr" class="form-control" value="50">
+          <select class="input-group-text col-5" id="unitOption">
+            <option value="0.001">kH/s</option>
+            <option value="1" selected>MH/s</option>
+            <option value="1000">GH/s</option>
+            <option value="1000000">TH/s</option>
+          </select>
+        </div>
+      </div>
+      <label for="usr" class="mt-2">Result timeframe period</label>
+      <select class="form-select mx-auto" id="timeFrame">
+        <option value="3600">hour</option>
+        <option value="86400" selected>day</option>
+        <option value="2592000">month</option>
+        <option value="31104000">year</option>
+      </select>
+    </div>
+    <p class="lead mt-4 col-sm-8 offset-sm-2 p-2" id="info"></p>
+    <p class="info" id="tips"></p>
+  </main>
+
+  <footer class="mt-auto text-white-50">
+    <p>Crypto Mining Calculator<br>
+    Data provided by
+      <a href="https://min-api.cryptocompare.com/" target="_blank">
+        CryptoCompare
+      </a>
+   </p>
+  </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"
+          integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+          crossorigin="anonymous">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/tooltipster@4.2.8/dist/js/tooltipster.bundle.min.js"
+          integrity="sha256-v8akIv8SCqn5f3mbVB7vEWprIizxPh6oV0yhao/dbB4="
+          crossorigin="anonymous">
+  </script>
+  <script>
+  function isValidNumber(numb) {
+    // Is it a valid positive float ?
+    var floatRegex = /^\d+(?:[.,]\d*?)?$/;
+    if (!floatRegex.test(numb))
+      return false;
+    var value = parseFloat(numb);
+    if (isNaN(value))
+      return false;
+    if (value == 0)
+      return false;
+    return true;
+  }
+  function checkHashrateInput() {
+    var minerHashrateRead = $("#hashr").val();
+    if (!isValidNumber(minerHashrateRead)) {
+      dispTips("Check hash power input.");
+      return false;
+    }
+    return minerHashrateRead;
+  
+  }
+  function computeReward(globalMHashrate, blocksFrame, blockReward, tokPrice) {
+    displayResult("");
+    dispTips("");
+    var minerHashrate = checkHashrateInput();
+    if (minerHashrate) {
+      var GlobalRewardPerDay = blockReward * blocksFrame;
+      minerHashrate *= $("#unitOption").val();
+      var rewardTokens = minerHashrate/globalMHashrate*GlobalRewardPerDay; // in tokens
+      var rewardFiat = rewardTokens * tokPrice; // in fiat/target money
+      if (isNaN(rewardFiat))
+        dispTips("Error, check input data.");
+      else
+        displayResult(rewardFiat);
+    }
+  }
+  function addSpiner() {
+    var spinDOM = $('<div class="spinner-grow" role="status">');
+    $("#info").append(spinDOM);
+  }
+  function getInfo(coinArg, fiatArg, timeWindow, cb) {
+    addSpiner();
+    $.getJSON("https://min-api.cryptocompare.com/data/blockchain/mining/calculator?fsyms="+coinArg+"&tsyms="+fiatArg,
+      function( data ) {
+        var infos = data["Data"][coinArg]["CoinInfo"];
+        var GlobalMHps = infos["NetHashesPerSecond"]/1000000;
+        if (coinArg === "BTC") // Which other crypto is affected by this shift in the API ?
+          GlobalMHps *= 1000000000;
+        var blocks = timeWindow/infos["BlockTime"];
+        var blockUnitReward = infos["BlockReward"];
+        var tokenPrice = data["Data"][coinArg]["Price"][fiatArg];
+        cb(GlobalMHps, blocks, blockUnitReward, tokenPrice);
+      }
+    );
+  }
+  function displayResult(rewardFiatDay) {
+    if (rewardFiatDay != "") {
+      var fiat = $("#fiatInput").val().toUpperCase();
+      var period = $("#timeFrame option:selected").text()
+      var titDom = $("<div>").text("Total revenue : ");
+      var perDOM = $("<div>").text(rewardFiatDay.toFixed(2)+" "+fiat+" per "+period);
+      var warnDOM = $('<div class="warningText mt-3">')
+        .html('<span class="text-warning fw-bold">Note : </span> Computations are based on the present real-time&nbsp;conditions,<br>these parameters may evolve considerably over time.');
+      $("#info").append(titDom);
+      $("#info").append(perDOM);
+      $("#info").append(warnDOM);
+    }
+    else
+      $("#info").children().remove();
+  }
+  function dispTips(tipText) {
+    $("#tips").text(tipText);
+  }
+  function goCompute(){
+    // Erase outputs
+    displayResult("");
+    dispTips("");
+    // Gather inputs and start computation
+    var coin = $("#coinInput").val().toUpperCase();
+    var fiat = $("#fiatInput").val().toUpperCase();
+    if (coin.length == 3 && fiat.length == 3) {
+    var tFrame = $("#timeFrame").val();
+      var minerHashrate = checkHashrateInput();
+      if (minerHashrate) {
+        getInfo(coin, fiat, tFrame, computeReward)
+      }
+    }
+    else
+      dispTips("Please input valid data.");
+  }
+  $(document).ready(function() {
+    $('.tooltipst').tooltipster({
+      trigger: 'custom',
+      triggerOpen: {
+        mouseenter: true,
+        tap: true
+      },
+      triggerClose: {
+        mouseleave: true,
+        tap: true,
+        scroll: true,
+        touchleave: true
+      }
+    });
+    // trigger computation on some input fields monitored
+    var watchedInputs = ["#coinInput", "#fiatInput", "#hashr"];
+    var excludedKeys = [9,16,17,18,19,20,37,38,39,40]; // exclusion keycodes to filter out
+    watchedInputs.forEach(watchedInputs => {
+      $(watchedInputs).keyup(function(ev) {
+        if (excludedKeys.indexOf(ev.keyCode) < 0)
+          goCompute();
+      });
+    });
+    $("#timeFrame").change(function() {
+      goCompute();
+    });
+    $("#unitOption").change(function() {
+      goCompute();
+    });
+    // Start the first computation
+    goCompute();
+  })
+  </script>
+
+  </body>
+</html>
