@@ -180,8 +180,8 @@
     // Gather inputs and start computation
     var coin = $("#coinInput").val().toUpperCase();
     var fiat = $("#fiatInput").val().toUpperCase();
-    if (coin.length == 3 && fiat.length == 3) {
-    var tFrame = $("#timeFrame").val();
+    if (coin.length >= 3 && fiat.length >= 3) {
+      var tFrame = $("#timeFrame").val();
       var minerHashrate = checkHashrateInput();
       if (minerHashrate) {
         getInfo(coin, fiat, tFrame, computeReward)
