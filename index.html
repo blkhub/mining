@@ -144,14 +144,20 @@
     addSpiner();
     $.getJSON("https://min-api.cryptocompare.com/data/blockchain/mining/calculator?fsyms="+coinArg+"&tsyms="+fiatArg,
       function( data ) {
-        var infos = data["Data"][coinArg]["CoinInfo"];
-        var GlobalMHps = infos["NetHashesPerSecond"]/1000000;
-        if (coinArg === "BTC") // Which other crypto is affected by this shift in the API ?
-          GlobalMHps *= 1000000000;
-        var blocks = timeWindow/infos["BlockTime"];
-        var blockUnitReward = infos["BlockReward"];
-        var tokenPrice = data["Data"][coinArg]["Price"][fiatArg];
-        cb(GlobalMHps, blocks, blockUnitReward, tokenPrice);
+        if ("Data" in data && coinArg in data["Data"]) {
+          var infos = data["Data"][coinArg]["CoinInfo"];
+          var GlobalMHps = infos["NetHashesPerSecond"]/1000000;
+          if (coinArg === "BTC") // Which other crypto is affected by this shift in the API ?
+            GlobalMHps *= 1000000000;
+          var blocks = timeWindow/infos["BlockTime"];
+          var blockUnitReward = infos["BlockReward"];
+          var tokenPrice = data["Data"][coinArg]["Price"][fiatArg];
+          cb(GlobalMHps, blocks, blockUnitReward, tokenPrice);
+        }
+        else {
+          displayResult("");
+          dispTips("Error, check input data.");
+        }
       }
     );
   }
