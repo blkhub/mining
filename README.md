@@ -20,6 +20,6 @@ Using :
 * [Cover](https://getbootstrap.com/docs/5.0/examples/cover/) template
 * [jQuery](https://jquery.com/) 3
 * [Tooltipster](https://calebjacob.github.io/tooltipster/) 4
-* ]CryptoCompare](https://min-api.cryptocompare.com/) API
+* [CryptoCompare](https://min-api.cryptocompare.com/) API
 
 It is lightweight, the global data size downloaded is under 70 kB using the brotli encoding.
